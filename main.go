@@ -5,6 +5,7 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/base64"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -19,13 +20,16 @@ type JWT struct {
 	signature string
 }
 
-func parseJWT(jwt string) JWT {
+func parseJWT(jwt string) (JWT, error) {
 	x := strings.Split(jwt, ".")
+	if len(x) != 3 {
+		return JWT{}, errors.New("invalid JWT. Not enough or too many segments")
+	}
 	return JWT{
 		header:    x[0],
 		payload:   x[1],
 		signature: x[2],
-	}
+	}, nil
 }
 
 func hs256(data, secret string) string {
@@ -35,14 +39,18 @@ func hs256(data, secret string) string {
 }
 
 func main() {
-	token := flag.String("t", "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjpudWxsfQ.Tr0VvdP6rVBGBGuI_luxGCOaz6BbhC6IxRTlKOW8UjM", "JWT string")
+	token := flag.String("t", "", "JWT string")
 	wordlistPath := flag.String("w", "", "Path to wordlist")
 	flag.Parse()
-	if *wordlistPath == "" {
-		log.Fatalf("Please provide a wordlist")
+	if *wordlistPath == "" || *token == "" {
+		flag.Usage()
+		return
 	}
 
-	jwt := parseJWT(*token)
+	jwt, err := parseJWT(*token)
+	if err != nil {
+		log.Fatalln(err)
+	}
 
 	file, err := os.Open(*wordlistPath)
 	if err != nil {
