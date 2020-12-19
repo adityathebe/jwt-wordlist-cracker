@@ -31,7 +31,7 @@ func parseJWT(jwt string) JWT {
 func hs256(data, secret string) string {
 	mac := hmac.New(sha256.New, []byte(secret))
 	mac.Write([]byte(data))
-	return strings.ReplaceAll(base64.URLEncoding.EncodeToString(mac.Sum(nil)), "=", "")
+	return base64.RawURLEncoding.EncodeToString(mac.Sum(nil))
 }
 
 func main() {
